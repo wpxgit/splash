@@ -478,7 +478,7 @@ class Splash(BaseExposedObject):
         else:
             raise TypeError("Invalid render_options type: %s" %
                             render_options.__class__)
-
+        
         self.tab = tab  # type: BrowserTab
         self.log = log or tab.logger.log
         self._result_headers = []
@@ -491,6 +491,7 @@ class Splash(BaseExposedObject):
         self.request_wrapper = self.lua.eval("require('request')")
         self.response_wrapper = self.lua.eval("require('response')")
         self.element_wrapper = self.lua.eval("require('element')")
+        
 
     def clear(self):
         self.log("[splash] clearing %d objects" % len(self._objects_to_clear),
@@ -635,6 +636,8 @@ class Splash(BaseExposedObject):
         headers = self.lua.lua2python(headers, max_depth=2, encoding=None)
         http_method = self.lua.lua2python(http_method, max_depth=1)
         formdata = self.lua.lua2python(formdata, max_depth=3)
+        
+        print ("Splash::go set unsupportedContent to " + str(self.tab.unsupported_content) )
 
         if url is None:
             raise ScriptError({
@@ -1110,6 +1113,29 @@ class Splash(BaseExposedObject):
                 "message": "splash.resource_timeout can't be negative"
             })
         self.tab.set_resource_timeout(timeout)
+
+    @lua_property('unsupported_content')
+    @command()
+    def get_unsupported_content(self):
+        return self.tab.unsupported_content
+
+    @get_unsupported_content.lua_setter
+    @command()
+    def set_unsupported_content(self, option):
+        if option is not None:
+            if option.lower() in ('drop', 'download'):
+                self.tab.unsupported_content = option
+
+    @lua_property('download_directory')
+    @command()
+    def get_download_directory(self):
+        return self.tab.download_directory
+
+    @get_download_directory.lua_setter
+    @command()
+    def set_download_directory(self, path):
+        if path is not None:
+            self.tab.download_directory = path
 
     @command()
     def status_code(self):
